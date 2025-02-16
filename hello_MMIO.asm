@@ -1,0 +1,10 @@
+.data
+x: .word 9
+
+# EXAMPLE OF MEMORY ADDRESS
+.text
+lw $t0, x # LOAD WORD ADDRESSING
+add $sp,$sp, -4 # ALLOCATE FOUR BIT
+sw $t0, 0($sp) # STORE THE ADDRESS OF T0
+lw $t1, 0($sp) # LOAD THE ADRESS IN REGISTER 0
+add $sp,$sp, 4 # REMOVE THE ADDRESS IN THE STACK
