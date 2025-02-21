@@ -11,6 +11,7 @@ array_buffer: .space 0
   li $a0, 4# CREATE A SPACE OF 4 BYTE IN THE REGISTER SBRK
   li $v0, 9 # ALLOCATE THE HEAP
   syscall
+  
   jal add_stack
   
   
