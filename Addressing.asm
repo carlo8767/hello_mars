@@ -13,31 +13,15 @@ wall_8_line: .asciiz "###############\n"
 .text
   
   jal load_controller
-  
-
 
   jal load_words
-  
-  
   move $a0, $t0
   jal writing_output
+ 
   move $a0, $t1
   jal writing_output
-  move $a0, $t2
-  jal writing_output
-   move $a0, $t3
-  jal writing_output
-  move $a0, $t4
-  jal writing_output
-  move $a0, $t5
-  jal writing_output
-   move $a0, $t6
-  jal writing_output
-  move $a0, $t7
-  jal writing_output
 
 
-  
  
   move $a0, $v0 # move the 
   addi $v0,$zero, 10 # Exit
@@ -61,7 +45,6 @@ load_controller:
   
 
  
-
 writing_output:
   # A0 ADDRESS YOU WANT PRINT
   # A1 EXTRACT VALUE TO STORE
@@ -81,7 +64,9 @@ writing_output:
      lw $a2, ($s4) # LOAD CONTROLLER STATUS
      andi $a2, $a2, 1 # VERIFY BIT READY
      beq $a2, $zero, drawing_begin
-     sb $a1, 0($s5) # BEGIN WRITING STORE VALUE IN DATA CONTROLLER
+     sb $a1, ($s5) # BEGIN WRITING STORE VALUE IN DATA CONTROLLER
+     lb $t8, 1($s5)
+     la $t9, 1($s5)
      add $a0, $a0, 1 # ADD NEXT ADDRESS IN THE MEMORY
      lw $ra, 0($sp) #  LOAD FROM THE BUTTON
      addi $sp, $sp, 4 # RETURN AT DRAWING
@@ -93,6 +78,3 @@ writing_output:
     lw $ra, 4($sp) #  LOAD THE ADDRESS WRITING OUTPUT
     addi $sp, $sp, 8 # REMOVE STACK
     jr $ra  # END WRITING OUTPUT 
-
-
-  
