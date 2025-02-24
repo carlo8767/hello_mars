@@ -16,15 +16,15 @@ add_stack:
   jal reading
   
 reading: 
-  lw $t1 0($t0) #  PIPPO READING  READ KEYBOARD REGISTER
+  lw $t1 ($t0) #  PIPPO READING  READ KEYBOARD REGISTER
   andi $t1, $t1, 1 # VERIFY BIT  CONTROLLER REGISTER IS 1
   beq $t1, $zero, reading # IF CONDITION EXUCTION
   jal poll
 
 poll:
   lw $t2, 4($t0) # STORE THE VALUE KEYBOARD
-  sw $t2, 0($t3) # STORE IN THE ARRAY PLUS INDEX
-  lw $ra, 0($sp) # LOAD ADDRESS ENTER ADD STACK COME BACK ADD STACK
+  sw $t2, ($t3) # STORE IN THE ARRAY PLUS INDEX
+  lw $ra, ($sp) # LOAD ADDRESS ENTER ADD STACK COME BACK ADD STACK
   add $sp, $sp, 4 # REMOVE SPACE IN MEMORY
   addi $t3, $t3, 4 # NEXT ADDRESS INDEX ARRAY
   jr $ra

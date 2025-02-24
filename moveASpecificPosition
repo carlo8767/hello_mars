@@ -1,0 +1,67 @@
+.data
+    .word 0x10000000  # MMIO base address
+    wall_8_line: .asciiz "############\n"
+
+.text
+    .globl main
+main:
+    # Load MMIO base address into register $t0
+    la $t0, 0x10000000  # Load the base address of MMIO
+
+    # Move cursor to position (x=10, y=5)
+    li $t2, 10  # X position
+    li $t3, 5   # Y position
+
+    # Write to MMIO to move the cursor
+    sw $t2, 0($t0)  # Write the X position to MMIO
+    sw $t3, 4($t0)  # Write the Y position to MMIO
+
+    # Call writing_output to print the line
+    la $t7, wall_8_line
+    move $a0, $t7
+    jal writing_output
+
+    # Exit the program
+    li $v0, 10
+    syscall
+
+writing_output:
+    # A0 - address of the string to print
+    # A1 - current character to print
+    # A3 - character count or loop control
+    addi $sp, $sp, -4  # Allocate space for return address
+    sw $ra, 0($sp)     # Save the return address
+
+    # Start drawing
+    jal drawing
+
+    # Restore the return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+drawing:
+    # Drawing the string character by character
+    lb $a1, ($a0)  # Load the current character from the string
+    beqz $a1, end_drawing  # If the character is null, end drawing
+
+    # Ensure controller is ready
+    jal drawing_begin
+
+    # Send the character to the controller
+    sb $a1, ($s5)  # Store the character in the controller
+    addi $a0, $a0, 1  # Move to the next character in the string
+
+    # Continue the drawing loop
+    jr $ra
+
+drawing_begin:
+    # Poll the controller until it's ready (check status register)
+    lw $a2, ($s4)  # Load controller status
+    andi $a2, $a2, 1  # Check if the ready bit is set
+    beq $a2, $zero, drawing_begin  # If not ready, loop again
+
+    jr $ra
+
+end_drawing:
+    
