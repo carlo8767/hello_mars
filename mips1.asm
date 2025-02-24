@@ -10,7 +10,7 @@ wall_8_line: .asciiz "############\n"
 x: .word 10
 y: .word 5
 
-bell: .asciiz  "␇1020"
+bell: .asciiz  "␇" 
 
 
 
@@ -18,19 +18,13 @@ bell: .asciiz  "␇1020"
   # IN THE TRANSMITTER DATA REGISTER UPLOAD BELL 
  
   jal load_controller
- 
-  li $t2, 2         # X position (column)
-  sll $t2, $t2, 20    # Shift X left by 20 bits
-
-  li $t3,  1        # Y position (row)
-  sll $t3, $t3, 8     # Shift Y left by 8 bits
-
-  li $t4, 7           # ASCII 7 (Bell character)
-  or $t5, $t2, $t3    # Combine X and Y positions
-  or $t5, $t5, $t4    # Combine with ASCII Bell
-   
-  move $a0, $t5 # BELL PRINT
-  jal store_bell
+  
+  
+  # A2 X POSITION
+  # A3 Y POSITION
+  li $a2, 10
+  li $a3, 0
+  jal setting_position
    
   jal load_words
    
@@ -64,11 +58,14 @@ load_words:
   la $t5, wall_6_line # IT CONTAINS 00
   la $t6, wall_7_line # IT CONTAINS 00
   la $t7, wall_8_line # IT CONTAINS 00
-   jr $ra
+ 
+  
+  jr $ra
   
 load_controller:
   la $s4, 0xffff0008 # ENTER load_controller CONTROLLER
   la $s5, 0xffff000c # ENTER load_controller CONTROLLER
+  
   jr $ra
   
 
@@ -81,16 +78,26 @@ lb $a1, 0($s5) # BEGIN WRITING STORE VALUE IN DATA CONTROLLER
 jr $ra
 
 
-store_bell:
- # A0 ADDRESS YOU WANT PRINT
-  # A1 EXTRACT VALUE TO STORE
-   move $a1, $a0
-   lw $a2, ($s4) # LOAD CONTROLLER STATUS
-   andi $a2, $a2, 1 # VERIFY BIT READY
-   beq $a2, $zero, store_bell
-   sw $a1, 0($s5) # BEGIN WRITING STORE VALUE IN DATA CONTROLLER
-   add $a0, $zero, 0
-   add $a1, $zero, 0
+setting_position:
+  # A0 BELL CHARACTER
+  # A1 EXTRACT VALUE TO STORE AFTER COMBINE
+  # A2 X POSITION
+  # A3 Y POSITION
+   li $a0, 7           # LOAD BELL CHARACTER
+   sll $a2, $a2, 20    # SHIFT X  20 bits
+   sll $a3, $a3, 8     # SHIFT Y  8 bits
+   or $a1, $a2, $a3    # COMBIN
+   or $a1, $a1, $a0    # Combine with ASCII Bell
+   lw $t8, ($s4) # LOAD VERIFICATION BIT
+   andi $t9, $t8, 1 # VERIFY BIT READY
+   beq $t9, $zero, setting_position
+   sw $a1, 0($s5) # BEGIN SETTING THE POSITION
+   li $a0, 0
+   li $a1, 0
+   li $a2, 0
+   li $a3  0
+   li $t8  0
+   li $t9  0
    jr $ra
 
   

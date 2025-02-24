@@ -8,6 +8,11 @@ wall_6_line: .asciiz "#             #\n"
 wall_7_line: .asciiz "#             #\n"
 wall_8_line: .asciiz "###############\n"
 
+caring: .asciiz "\033[0;50]CARLOMOVERIGHT\n"
+bit_move: .byte 2
+
+
+
 
 
 .text
@@ -15,6 +20,11 @@ wall_8_line: .asciiz "###############\n"
   jal load_controller
 
   jal load_words
+  la $t8, caring
+  move $a0, $t8
+  jal writing_output
+ 
+ 
   move $a0, $t0
   jal writing_output
  
@@ -65,8 +75,8 @@ writing_output:
      andi $a2, $a2, 1 # VERIFY BIT READY
      beq $a2, $zero, drawing_begin
      sb $a1, ($s5) # BEGIN WRITING STORE VALUE IN DATA CONTROLLER
-     lb $t8, 1($s5)
-     la $t9, 1($s5)
+     lb $t8, ($s5)
+     la $t9, ($s5)
      add $a0, $a0, 1 # ADD NEXT ADDRESS IN THE MEMORY
      lw $ra, 0($sp) #  LOAD FROM THE BUTTON
      addi $sp, $sp, 4 # RETURN AT DRAWING
