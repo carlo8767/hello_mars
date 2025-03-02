@@ -322,13 +322,12 @@ clear_move_new_position:
   addi $sp $sp, 4
   jr $ra
   
-  
-  
+ 
 random_position_x_y_reward:
   # RANDOM X
   addi $sp $sp, -4
   sw $ra 0($sp)
-  li	$a0, 1		# random generator id (will be used later)
+  li	$a0, 1		# ID SEED
   move 	$a1, $t0	# seed from time
   li	$v0, 40		# seed random number generator syscall
   syscall

@@ -17,8 +17,9 @@ left: .asciiz  "A"
 up: .asciiz    "W"
 down: .asciiz  "S"
 right: .asciiz  "D"
-
 empty: " "
+point_zero: .byte   48
+point_one: .byte   49
 
 
 
@@ -28,12 +29,12 @@ empty: " "
   jal load_controller_local
   jal load_words
   
-  li $a2, 10 # MOVE 10       
+  li $a2, 10 # # SET X         
   li $a3, 0 # MOVE Y
   jal setting_position
   move $a0, $t0
   jal writing_output
-  li $a2, 10 # GO AT POSITION 34       
+  li $a2, 10 # SET X       
   li $a3, 1 # GO Y
   jal setting_position
   move $a0, $t1
@@ -77,7 +78,7 @@ empty: " "
   move $a0, $s6 # WRITE PLAYER
   jal writing_output
   
-  li $a2, 12 # GO AT POSITION 34       
+  li $a2, 12 # SETTING X      
   li $a3, 2 # GO Y
   sw $a2,8($s7) # STORE THE INITIAL POSITION
   sw $a3, 12 ($s7) # STORE Y POSITION
@@ -85,8 +86,9 @@ empty: " "
   move $a0, $s5 # WRITE REWARD
   jal writing_output
   
-  
-  
+  li $t7  1 # VARIABLE TO PRINT 10 20 30 
+  li $t5, 5 # VERIFY THAT NEED TO PRINT/ADD 5
+  li $t1, 0
   
   
   
@@ -113,6 +115,7 @@ load_controller_local:
   li $s0, 7 # LOAD BELL CHARACTER
   la $s5, reward_r
   la $s6, player_p
+
   
   la $s7, meme_p_position # ARRAY 5 BYTE
   la $s1 buffer
@@ -124,7 +127,7 @@ setting_position:
   # A2 X POSITION
   # A3 Y POSITION
    # POSSIBLE MISTAKE IF IT IS NOT SET TO 1
-   move $a0, $s0
+   move $a0, $s0 # MOVE BALL
    sll $a2, $a2, 20    # SHIFT X  20 bits # REGISTER IS 32 BIT
    sll $a3, $a3, 8     # SHIFT Y  8 bits
    or $a1, $a2, $a3    # COMBIN X AND Y
@@ -314,7 +317,7 @@ clear_move_new_position:
   seq $t8, $a1, $a3 # VERIFY Y POSITION  
   andi $t9, $t8, 1  # VERIFY X POSITION
   beq $t9, $zero exit_collision
-  
+  jal reward
   jal random_position_x_y_reward # SECOND
   j  exit_collision
   exit_collision:
@@ -328,11 +331,7 @@ random_position_x_y_reward:
   # RANDOM X
   addi $sp $sp, -4
   sw $ra 0($sp)
-  li	$a0, 1		# random generator id (will be used later)
-  move 	$a1, $t0	# seed from time
-  li	$v0, 40		# seed random number generator syscall
-  syscall
-  li	$a0, 1	# as said, this id is the same as random generator id
+  
   li	$a1, 10	        # upper bound of the range
   li	$v0, 42		# random int range
   syscall
@@ -343,17 +342,12 @@ random_position_x_y_reward:
  
   
   # RANDOM Y
-  li	$a0, 1		# random generator id (will be used later)
-  move 	$a1, $t0	# seed from time
-  li	$v0, 40		# seed random number generator syscall
-  syscall
-  li	$a0, 1		# as said, this id is the same as random generator id
-  li	$a1, 4	# upper bound of the range
+  li	$a1, 3	# upper bound of the range
   li	$v0, 42		# random int range
   syscall
   
    #ADJUST
-  addi $a0, $a0, 1
+  addi $a0, $a0, 2
   
   sw $a0  12($s7)  
  
@@ -366,3 +360,85 @@ random_position_x_y_reward:
   lw $ra 0($sp)
   addi $sp $sp, 4
   jr $ra
+
+
+reward:
+# REWARD WITH 5 POINT
+  addi $sp, $sp, -4
+  sw $ra, 0($sp)
+  li $a2, 16 # SET X  ENTER REWARD      
+  li $a3, 0 # GO Y
+  jal setting_position
+  
+  # li $t7  1 # VARIABLE TO PRINT 10 20 30 
+  # li $t5, 5 # VERIFY THAT NEED TO PRINT/ADD 5
+  # li $t1, 0
+  
+  
+  # FIRST TIME PRINT FIVE
+  sle $t8, $t1, 0 # PIPPO FIRST REWARD
+  andi $t9, $t8, 1
+  beq $t9, $zero, else_10 # VERIFY THAT IS FIVE
+  la $a1 point_zero
+  lb $a0, ($a1)
+  add $a0, $a0, 5
+  jal print_reward
+  addi $t1, $t1, 1 # ADDING POINT TO PRINT 1 TO PRINT 10 ..20..30..
+  j end_reward
+  
+  
+ 
+  # VERIFY IF  NE YOU HAVE TO PRINT T7 (10, 20, 30)
+  else_10: 
+    sle $t8, $t1, 1 # PIPPO SECOND REWARD 10
+    andi $t9, $t8, 1
+    beq $t9, $zero, else_15 # VERIFY THAT IS FIVE
+    la $a1 point_zero
+    lb $a0, ($a1)
+    add $a0, $a0, $t7 # T7 IT WILL INCREMENT EXPONENTIALLY
+    jal print_reward
+    
+    li $a2, 17 # SET X  E
+    li $a3, 0 # GO Y
+    jal setting_position
+    la $a1 point_zero
+    lb $a0, ($a1)
+    jal print_reward
+    addi $t1, $t1, 1 # ADDING POINT TO PRINT NOT ZERO BUT FIVE
+    j end_reward
+
+  # SECOND REWARD ADD 15 25 35 BECAUSE INCREASE
+  else_15: 
+  sle $t8, $t1, 2  #  # PIPPO SECOND THIRD 15 ALWAYS INCREMENT AUTOMATICALLY 1 2 3 ...
+  andi $t9, $t8, 1
+  beq $t9, $zero, end_reward # VERIFY THAT IS FIVE
+  la $a1 point_zero
+  lb $a0, ($a1)
+  add $a0, $a0, $t7 # IT WILL PRINT ADDING THE VALUE IS T7
+  jal print_reward
+  li $a2, 17 # SET X  ENTER REWARD FOR 0      
+  li $a3, 0 # GO Y
+  jal setting_position
+  la $a1 point_zero
+  lb $a0, ($a1)
+  add $a0, $a0, 5
+  jal print_reward
+  sub  $t1, $t1, 1 # ADDING POINT TO PRINT NOT ZERO BUT FIVE
+  addi $t7, $t7, 1 # ADDING POINT TO PRINT NOT ZERO BUT FIVE
+  # VERIFY IT IS 90
+  j end_reward
+  
+  end_reward:
+   lw $ra 0($sp)  # RELOAD THE ADDRESS
+   addi $sp $sp 4
+   jr $ra
+    
+    
+  
+print_reward:
+     move $a1, $a0
+     lw $a2, ($s4) # LOAD CONTROLLER STATUS
+     andi $a2, $a2, 1 # VERIFY BIT READY
+     beq $a2, $zero, print_reward
+     sb $a1, 4($s4) # BEGIN WRITING STORE VALUE IN DATA CONTROLLER
+     jr $ra
