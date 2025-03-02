@@ -1,78 +1,84 @@
 .data
-score_1_title: .asciiz "Score:0     \n" # ONE BYTE FOUR LETTER
-wall_2_line: .asciiz   "############\n"
-wall_3_line: .asciiz   "#          #\n"
-wall_4_line: .asciiz   "#          #\n"
-wall_5_line: .asciiz   "#          #\n"
-wall_6_line: .asciiz   "#          #\n"
-wall_7_line: .asciiz   "############\n"
+score_1_title: .asciiz "Score:0     " # ONE BYTE FOUR LETTER
+wall_2_line: .asciiz   "##############"
+wall_3_line: .asciiz   "#            #"
 player_p: .asciiz "P"
-meme_p_position:.space 16
 reward_r: .asciiz "R"
-buffer:.space 1000 # IMPLEMENT WITH HEAP
-
-bell: .ascii  "␇"
-
+game_over: .asciiz  "GAME OVER"
+clear_window: .asciiz "FF"
 left: .asciiz  "A"
 up: .asciiz    "W"
 down: .asciiz  "S"
 right: .asciiz  "D"
 empty: " "
-point_zero: .byte   48
-point_one: .byte   49
-
+point_zero: .byte 48
+point_one: .byte 49
+meme_p_position: .space 16
+size:   .word 4 
+buffer: .space 1000
 
 
 .text
-  # IN THE TRANSMITTER DATA REGISTER UPLOAD BELL 
- 
   jal load_controller_local
   jal load_words
   
-  li $a2, 10 # # SET X         
-  li $a3, 0 # MOVE Y
+  li $a2, 10 # SET        
+  li $a3, 0 # SET Y
   jal setting_position
   move $a0, $t0
   jal writing_output
+  
   li $a2, 10 # SET X       
-  li $a3, 1 # GO Y
+  li $a3, 1 # SET Y
   jal setting_position
   move $a0, $t1
   jal writing_output
   
-  li $a2, 10 # GO AT POSITION 34       
-  li $a3, 2 # GO Y
+  li $a2, 10 # SET X       
+  li $a3, 2 # SET Y
   jal setting_position
   move $a0, $t2
   jal writing_output
   
-  li $a2, 10 # GO AT POSITION 34       
-  li $a3, 3 # GO Y
+  li $a2, 10 # SET X       
+  li $a3, 3 # SET Y
   jal setting_position
-  move $a0, $t3
+  move $a0, $t2
   jal writing_output
   
-  li $a2, 10 # GO AT POSITION 34       
-  li $a3, 4 # GO Y
+  li $a2, 10 # SET X      
+  li $a3, 4 #  SET Y
   jal setting_position
-  move $a0, $t4
+  move $a0, $t2
   jal writing_output
   
-  li $a2, 10 # GO AT POSITION 34       
-  li $a3, 5 # GO Y
+  li $a2, 10 # SET X       
+  li $a3, 5 # SET Y
   jal setting_position
-  move $a0, $t5
+  move $a0, $t2
   jal writing_output
   
-  li $a2, 10 # GO AT POSITION 34       
-  li $a3, 6 # GO Y
+  li $a2, 10 # SET X       
+  li $a3, 6 # SET Y
   jal setting_position
-  move $a0, $t6
+  move $a0, $t2
   jal writing_output
   
-  li $a2, 15 # GO AT POSITION 34       
-  li $a3, 4 # GO Y
-  sw $a2, ($s7) # STORE THE INITIAL POSITION
+  li $a2, 10 # SET X       
+  li $a3, 7 # SET Y
+  jal setting_position
+  move $a0, $t2
+  jal writing_output
+  
+  li $a2, 10 # SET X      
+  li $a3, 8 # SET Y
+  jal setting_position
+  move $a0, $t1
+  jal writing_output
+  
+  li $a2, 15 # SET X      
+  li $a3, 4 # SET Y
+  sw $a2, 0 ($s7) # STORE THE INITIAL POSITION
   sw $a3, 4 ($s7) # STORE Y POSITION
   jal setting_position
   move $a0, $s6 # WRITE PLAYER
@@ -80,7 +86,7 @@ point_one: .byte   49
   
   li $a2, 12 # SETTING X      
   li $a3, 2 # GO Y
-  sw $a2,8($s7) # STORE THE INITIAL POSITION
+  sw $a2, 8($s7) # STORE THE INITIAL POSITION
   sw $a3, 12 ($s7) # STORE Y POSITION
   jal setting_position
   move $a0, $s5 # WRITE REWARD
@@ -95,18 +101,12 @@ point_one: .byte   49
   # READING INPUT
   jal polling_input
   
-  move $a0, $v0 # move the 
-  addi $v0,$zero, 10 # Exit
-  syscall
  
 load_words:
   la $t0, score_1_title #  IT CONTAINS THE FIRST LETTER    ( THE FIRST ADDRESS)
   la $t1, wall_2_line # IT CONTAINS 00
   la $t2, wall_3_line # IT CONTAINS 00
-  la $t3, wall_4_line # IT CONTAINS 00
-  la $t4, wall_5_line # IT CONTAINS 00
-  la $t5, wall_6_line # IT CONTAINS 00
-  la $t6, wall_7_line # IT CONTAINS 00
+  la $s7, meme_p_position # ARRAY 4 WORD
   jr $ra
   
 load_controller_local:
@@ -115,10 +115,6 @@ load_controller_local:
   li $s0, 7 # LOAD BELL CHARACTER
   la $s5, reward_r
   la $s6, player_p
-
-  
-  la $s7, meme_p_position # ARRAY 5 BYTE
-  la $s1 buffer
   jr $ra
  
 setting_position:
@@ -178,8 +174,6 @@ polling_input:
   andi $t9, $t8, 1 # VERIFY STATUS REGISTER
   beq $t9, $zero, polling_input  # KEEP LOOPING IF IS NOT READY
   lw $a2, 4($s2) # READ THE CHARACTER
-  sb $a2, 0($s1) # STORE IN THE BUFFER
-  addi $s1, $s1, 4 # INCREMENT THE BUFFER
   jal move_player # MOVE PLAYER
   j polling_input # KEEP POOLING
 
@@ -247,9 +241,6 @@ move_player:
   addi $sp $sp 4
   jr $ra
 
-
-
-
 clear_move_new_position:
 # A2 POSITION X PLAYER
 # A3 POSITION Y PLAYER
@@ -306,43 +297,81 @@ clear_move_new_position:
 # COMPARE WITH 8 AND 2 INDEX OF MY ARRAY IN $S7
   addi $sp $sp, -4
   sw $ra 0($sp)
-  lw $a0 0($s7) # LOAD X POSITION P
-  lw $a1 4($s7)  # LOAD  Y POSITION P
-  lw $a2 8($s7) # LOAD X POSITION P
-  lw $a3 12($s7)  # LOAD  Y POSITION P
-  seq $t8, $a0, $a2   
-  andi $t9, $t8, 1
+  lw $a0 0($s7) # LOAD X POSITION PLAYER
+  lw $a1 4($s7)  # LOAD  Y POSITION PLAYER
+  lw $a2 8($s7) # LOAD X POSITION REWARD
+  lw $a3 12($s7)  # LOAD  Y POSITION REWARD
+  
+  
+  # VERIFY THAT HAS THE SAME X AND Y
+  seq $t8, $a0, $a2  #  VERIFY SAME X POSITION
+  andi $t9, $t8, 1  
   beq $t9, $zero exit_collision
   
   seq $t8, $a1, $a3 # VERIFY Y POSITION  
   andi $t9, $t8, 1  # VERIFY X POSITION
   beq $t9, $zero exit_collision
   jal reward
+   # PRINT A RANDOM COLLISION
   jal random_position_x_y_reward # SECOND
   j  exit_collision
   exit_collision:
+  jal hit_wall # COME BACK HERE
   lw $ra 0($sp)
   addi $sp $sp, 4
   jr $ra
   
+ 
+hit_wall:
+  #VERIFY IF HIT WALL
+  seq $t8, $a0, 10 # ENTER IN HIT THE WALL
+  andi $t9, $t8, 1
+  beq $t9, $zero  x_upper
+  j end_game # END GAME IF HIT THE WALL 
+  
+  x_upper:
+  seq $t8, $a0,  23 # ENTER IN HIT THE WALL
+  andi $t9, $t8, 1
+  beq $t9, $zero y_top
+  j end_game # END GAME IF HIT THE WALL 
+  
+  y_top:
+  seq $t8, $a1, 1 # ENTER IN HIT THE WALL
+  andi $t9, $t8, 1
+  beq $t9, $zero y_button
+  j end_game # END GAME IF HIT THE WALL 
+  
+  y_button:
+  seq $t8, $a1, 8 # ENTER IN HIT THE WALL
+  andi $t9, $t8, 1
+  beq $t9, $zero exit_hit_wall
+  j end_game # END GAME IF HIT THE WALL
+  
+exit_hit_wall:
+  jr $ra
+ 
+ 
+  
   
   
 random_position_x_y_reward:
+  # MOVE OF 1 IF HAS THE SAME POSITION
   # RANDOM X
   addi $sp $sp, -4
   sw $ra 0($sp)
   
-  li	$a1, 10	        # upper bound of the range
-  li	$v0, 42		# random int range
+  li	$a1, 12	# UPPER BOUND RANGE
+  li	$v0, 42		
   syscall
   #ADJUST
   addi $a0, $a0, 11
+  
   
   sw $a0, 8($s7) # STORE NEW X FOR
  
   
   # RANDOM Y
-  li	$a1, 3	# upper bound of the range
+  li	$a1, 6	# upper bound of the range
   li	$v0, 42		# random int range
   syscall
   
@@ -373,22 +402,52 @@ reward:
   # li $t7  1 # VARIABLE TO PRINT 10 20 30 
   # li $t5, 5 # VERIFY THAT NEED TO PRINT/ADD 5
   # li $t1, 0
-  
-  
-  # FIRST TIME PRINT FIVE
-  sle $t8, $t1, 0 # PIPPO FIRST REWARD
-  andi $t9, $t8, 1
-  beq $t9, $zero, else_10 # VERIFY THAT IS FIVE
-  la $a1 point_zero
-  lb $a0, ($a1)
-  add $a0, $a0, 5
-  jal print_reward
-  addi $t1, $t1, 1 # ADDING POINT TO PRINT 1 TO PRINT 10 ..20..30..
-  j end_reward
-  
-  
+
+  # VERIFY IT THE PLAYER REACHED 100
+   seq  $t8, $t7, 10  #  END GAME VERIFY
+   andi $t9, $t8, 1
+   beq $t9, $zero, print_five 
+   li $t1, 7 # ENTER END GAME
+   j write_100
+   write_100:
+     la $a1 point_zero # PRINT 100
+     lb $a0, ($a1)
+     add $a0, $a0, 1 # IT WILL PRINT ADDING THE VALUE IS T7
+     jal print_reward
+     
+     li $a2, 17 # SET X  ENTER REWARD FOR 0 PRINT 100
+     li $a3, 0 # GO Y
+     jal setting_position
+     la $a1 point_zero
+     lb $a0, ($a1)
+     jal print_reward 
+     
+     li $a2, 18 # SET X  ENTER REWARD FOR 0  PRINT 100    
+     li $a3, 0 # GO Y
+     jal setting_position
+     la $a1 point_zero
+     lb $a0, ($a1)
+     jal print_reward
+     nop
+     nop
+     nop
+     nop
+     nop
+     jal end_game
  
-  # VERIFY IF  NE YOU HAVE TO PRINT T7 (10, 20, 30)
+  # FIRST TIME PRINT FIVE
+  print_five:
+    sle $t8, $t1, 0 # PIPPO FIRST REWARD
+    andi $t9, $t8, 1
+    beq $t9, $zero, else_10 # VERIFY THAT IS FIVE
+    la $a1 point_zero
+    lb $a0, ($a1)
+    add $a0, $a0, 5
+    jal print_reward
+    addi $t1, $t1, 1 # ADDING POINT TO PRINT 1 TO PRINT 10 ..20..30..
+    j end_reward
+ 
+  # VERIFY IF  YOU HAVE TO PRINT T7 (10, 20, 30)
   else_10: 
     sle $t8, $t1, 1 # PIPPO SECOND REWARD 10
     andi $t9, $t8, 1
@@ -406,29 +465,31 @@ reward:
     jal print_reward
     addi $t1, $t1, 1 # ADDING POINT TO PRINT NOT ZERO BUT FIVE
     j end_reward
-
-  # SECOND REWARD ADD 15 25 35 BECAUSE INCREASE
+   
+   # SECOND REWARD ADD 15 25 35 BECAUSE INCREASE
   else_15: 
-  sle $t8, $t1, 2  #  # PIPPO SECOND THIRD 15 ALWAYS INCREMENT AUTOMATICALLY 1 2 3 ...
-  andi $t9, $t8, 1
-  beq $t9, $zero, end_reward # VERIFY THAT IS FIVE
-  la $a1 point_zero
-  lb $a0, ($a1)
-  add $a0, $a0, $t7 # IT WILL PRINT ADDING THE VALUE IS T7
-  jal print_reward
-  li $a2, 17 # SET X  ENTER REWARD FOR 0      
-  li $a3, 0 # GO Y
-  jal setting_position
-  la $a1 point_zero
-  lb $a0, ($a1)
-  add $a0, $a0, 5
-  jal print_reward
-  sub  $t1, $t1, 1 # ADDING POINT TO PRINT NOT ZERO BUT FIVE
-  addi $t7, $t7, 1 # ADDING POINT TO PRINT NOT ZERO BUT FIVE
-  # VERIFY IT IS 90
-  j end_reward
-  
+    sle $t8, $t1, 2  #  # PIPPO SECOND THIRD 15 ALWAYS INCREMENT AUTOMATICALLY 1 2 3 ...
+    andi $t9, $t8, 1
+    beq $t9, $zero, end_reward # VERIFY THAT IS FIVE
+    la $a1 point_zero
+    lb $a0, ($a1)
+    add $a0, $a0, $t7 # IT WILL PRINT ADDING THE VALUE IS T7
+    jal print_reward
+    li $a2, 17 # SET X  ENTER REWARD FOR 0      
+    li $a3, 0 # GO Y
+    jal setting_position
+    la $a1 point_zero
+    lb $a0, ($a1)
+    add $a0, $a0, 5
+    jal print_reward
+    sub  $t1, $t1, 1 # SUBSTRACT POINT TO PRINT NOT ZERO BUT FIVE
+    addi $t7, $t7, 1
+   
+   
+   
+
   end_reward:
+    # ADDING POINT TO PRINT 2
    lw $ra 0($sp)  # RELOAD THE ADDRESS
    addi $sp $sp 4
    jr $ra
@@ -442,3 +503,30 @@ print_reward:
      beq $a2, $zero, print_reward
      sb $a1, 4($s4) # BEGIN WRITING STORE VALUE IN DATA CONTROLLER
      jr $ra
+   
+
+end_game:
+   # CLEAR EVERYTHING
+   # $t0 clear_window
+   li $t0, 12
+   move $a0 $t0
+   jal clear
+   
+   # PRINT GAME OVER
+   li $a2, 10 # SET X  ENTER REWARD FOR 0      
+   li $a3, 0 # GO Y
+   jal setting_position
+   la $t0 game_over
+   move $a0 $t0
+   jal writing_output 
+   # EXIT
+   li $v0, 10 # END GAME
+   syscall
+  
+  
+clear:
+   lw $t8, ($s4) # LOAD VERIFICATION BIT
+   andi $t9, $t8, 1 # VERIFY BIT READY
+   beq $t9, $zero, clear
+   sw $a0, 4($s4) # BEGIN SETTING THE POSITION
+   jr $ra
