@@ -13,10 +13,10 @@ right: .asciiz  "D"
 empty: " "
 point_zero: .byte 48
 point_one: .byte 49
-meme_p_position: .space 16
+meme_p_position: .space 20
 size:   .word 4 
-buffer: .space 1000
 
+final_score: .asciiz  "The final score is:" 
 
 .text
   jal load_controller_local
@@ -85,7 +85,7 @@ buffer: .space 1000
   jal writing_output
   
   li $a2, 12 # SETTING X      
-  li $a3, 2 # GO Y
+  li $a3, 2 # SET Y
   sw $a2, 8($s7) # STORE THE INITIAL POSITION
   sw $a3, 12 ($s7) # STORE Y POSITION
   jal setting_position
@@ -95,9 +95,8 @@ buffer: .space 1000
   li $t7  1 # VARIABLE TO PRINT 10 20 30 
   li $t5, 5 # VERIFY THAT NEED TO PRINT/ADD 5
   li $t1, 0
-  
-  
-  
+
+    
   # READING INPUT
   jal polling_input
   
@@ -106,7 +105,6 @@ load_words:
   la $t0, score_1_title #  IT CONTAINS THE FIRST LETTER    ( THE FIRST ADDRESS)
   la $t1, wall_2_line # IT CONTAINS 00
   la $t2, wall_3_line # IT CONTAINS 00
-  la $s7, meme_p_position # ARRAY 4 WORD
   jr $ra
   
 load_controller_local:
@@ -115,6 +113,7 @@ load_controller_local:
   li $s0, 7 # LOAD BELL CHARACTER
   la $s5, reward_r
   la $s6, player_p
+  la $s7, meme_p_position # ARRAY 4 WORD
   jr $ra
  
 setting_position:
@@ -254,9 +253,7 @@ clear_move_new_position:
   lw $a2, 0($s7) # MOVE X       
   lw $a3, 4($s7) # MOVE Y
   jal setting_position
-  
-  
-  
+    
  # 2 ELIMINATE THE POSITION
   la $a0, empty  # 2 PIPPO
   jal writing_output
@@ -282,8 +279,6 @@ clear_move_new_position:
   lw $ra, 0($sp)  # RELOAD THE ADDRESS
   addi $sp $sp 4
   jr $ra
-  
-  
   
  verify_collision:
 # VERIFY IF THE MEME POSITION HAS THE SAME VALUE
@@ -321,7 +316,6 @@ clear_move_new_position:
   addi $sp $sp, 4
   jr $ra
   
- 
 hit_wall:
   #VERIFY IF HIT WALL
   seq $t8, $a0, 10 # ENTER IN HIT THE WALL
@@ -350,26 +344,28 @@ hit_wall:
 exit_hit_wall:
   jr $ra
  
- 
-  
-  
-  
 random_position_x_y_reward:
   # MOVE OF 1 IF HAS THE SAME POSITION
   # RANDOM X
   addi $sp $sp, -4
-  sw $ra 0($sp)
-  
+  sw $ra 0($sp) 
   li	$a1, 12	# UPPER BOUND RANGE
   li	$v0, 42		
   syscall
   #ADJUST
   addi $a0, $a0, 11
-  
-  
+  # VERIFY THAT IS NOT THE SAME POSITION
+  lw $a2, 0($s7)
+  seq  $t8, $a2, $a0
+  and $t9, $t8, 1
+  beq $t9, $zero, continue  
+  j random_position_x_y_reward
+  continue:  
   sw $a0, 8($s7) # STORE NEW X FOR
  
-  
+ 
+ 
+   
   # RANDOM Y
   li	$a1, 6	# upper bound of the range
   li	$v0, 42		# random int range
@@ -377,7 +373,12 @@ random_position_x_y_reward:
   
    #ADJUST
   addi $a0, $a0, 2
-  
+  lw $a2, 0($s7)
+  seq  $t8, $a2, $a0
+  and $t9, $t8, 1
+  beq $t9, $zero, continue_y
+  j continue 
+  continue_y:  
   sw $a0  12($s7)  
  
   lw $a2, 8($s7) # MOVE X       
@@ -396,7 +397,7 @@ reward:
   addi $sp, $sp, -4
   sw $ra, 0($sp)
   li $a2, 16 # SET X  ENTER REWARD      
-  li $a3, 0 # GO Y
+  li $a3, 0 # SET Y
   jal setting_position
   
   # li $t7  1 # VARIABLE TO PRINT 10 20 30 
@@ -416,23 +417,25 @@ reward:
      jal print_reward
      
      li $a2, 17 # SET X  ENTER REWARD FOR 0 PRINT 100
-     li $a3, 0 # GO Y
+     li $a3, 0 # SET Y
      jal setting_position
      la $a1 point_zero
      lb $a0, ($a1)
      jal print_reward 
      
      li $a2, 18 # SET X  ENTER REWARD FOR 0  PRINT 100    
-     li $a3, 0 # GO Y
+     li $a3, 0 # SET Y
      jal setting_position
      la $a1 point_zero
      lb $a0, ($a1)
      jal print_reward
-     nop
-     nop
-     nop
-     nop
-     nop
+     li $t7 200000
+     j loop_wait_100
+     loop_wait_100:
+     add $t7, $t7, -1
+     slt $t8, $t7 $zero
+     andi $t9, $t7, 1
+     beq $t8, $zero,loop_wait_100 
      jal end_game
  
   # FIRST TIME PRINT FIVE
@@ -448,7 +451,7 @@ reward:
     j end_reward
  
   # VERIFY IF  YOU HAVE TO PRINT T7 (10, 20, 30)
-  else_10: 
+  else_10:
     sle $t8, $t1, 1 # PIPPO SECOND REWARD 10
     andi $t9, $t8, 1
     beq $t9, $zero, else_15 # VERIFY THAT IS FIVE
@@ -458,7 +461,7 @@ reward:
     jal print_reward
     
     li $a2, 17 # SET X  E
-    li $a3, 0 # GO Y
+    li $a3, 0 # SET Y
     jal setting_position
     la $a1 point_zero
     lb $a0, ($a1)
@@ -468,7 +471,7 @@ reward:
    
    # SECOND REWARD ADD 15 25 35 BECAUSE INCREASE
   else_15: 
-    sle $t8, $t1, 2  #  # PIPPO SECOND THIRD 15 ALWAYS INCREMENT AUTOMATICALLY 1 2 3 ...
+    sle $t8, $t1, 2   # PIPPO SECOND THIRD 15 ALWAYS INCREMENT AUTOMATICALLY 1 2 3 ...
     andi $t9, $t8, 1
     beq $t9, $zero, end_reward # VERIFY THAT IS FIVE
     la $a1 point_zero
@@ -476,12 +479,13 @@ reward:
     add $a0, $a0, $t7 # IT WILL PRINT ADDING THE VALUE IS T7
     jal print_reward
     li $a2, 17 # SET X  ENTER REWARD FOR 0      
-    li $a3, 0 # GO Y
+    li $a3, 0 # SET Y
     jal setting_position
     la $a1 point_zero
     lb $a0, ($a1)
     add $a0, $a0, 5
     jal print_reward
+    
     sub  $t1, $t1, 1 # SUBSTRACT POINT TO PRINT NOT ZERO BUT FIVE
     addi $t7, $t7, 1
    
@@ -494,8 +498,6 @@ reward:
    addi $sp $sp 4
    jr $ra
     
-    
-  
 print_reward:
      move $a1, $a0
      lw $a2, ($s4) # LOAD CONTROLLER STATUS
@@ -504,7 +506,6 @@ print_reward:
      sb $a1, 4($s4) # BEGIN WRITING STORE VALUE IN DATA CONTROLLER
      jr $ra
    
-
 end_game:
    # CLEAR EVERYTHING
    # $t0 clear_window
@@ -514,11 +515,30 @@ end_game:
    
    # PRINT GAME OVER
    li $a2, 10 # SET X  ENTER REWARD FOR 0      
-   li $a3, 0 # GO Y
+   li $a3, 0 # SET Y
    jal setting_position
    la $t0 game_over
    move $a0 $t0
-   jal writing_output 
+   jal writing_output
+   
+   # PRINTING FINAL SCORE
+   
+   li $a2, 20 # SET X  ENTER REWARD FOR 0      
+   li $a3, 0 # SET Y
+   jal setting_position
+   la $t0 final_score # PRINTING FINAL SCORE
+   move $a0 $t0
+   jal writing_output
+   
+   li $a2, 30 # SET X  ENTER REWARD FOR 0      
+   li $a3, 0 # SET Y
+   jal setting_position
+   
+   move $a0 $t6
+   jal writing_output
+   
+ 
+     
    # EXIT
    li $v0, 10 # END GAME
    syscall
