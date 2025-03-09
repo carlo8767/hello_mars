@@ -22,6 +22,11 @@ meme_p_position: .space 24
   jal load_controller_local
   jal load_words
   
+  # VERIFY THAT WE ARE READY TO WRITE
+  controller_inital_status:
+  lw $a2, ($s4) # LOAD CONTROLLER STATUS
+  andi $a2, $a2, 1 # VERIFY BIT READY
+  beq $a2, $zero, controller_inital_status
   li $a2, 10 # SET        
   li $a3, 0 # SET Y
   jal setting_position

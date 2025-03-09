@@ -1,4 +1,6 @@
 .data
+first_velocity: .word 10000
+second_velocity: .word 10000
 score_1_title: .asciiz "Score:0     " # ONE BYTE FOUR LETTER
 wall_2_line: .asciiz   "##############"
 wall_3_line: .asciiz   "#            #"
@@ -22,6 +24,12 @@ meme_p_position: .space 24
   jal load_controller_local
   jal load_words
   
+  
+  # VERIFY THAT WE ARE READY TO WRITE
+  controller_inital_status:
+  lw $a2, ($s4) # LOAD CONTROLLER STATUS
+  andi $a2, $a2, 1 # VERIFY BIT READY
+  beq $a2, $zero, controller_inital_status
   li $a2, 10 # SET        
   li $a3, 0 # SET Y
   jal setting_position
@@ -190,27 +198,30 @@ keep_moving:
   add $a3, $t4, $zero # SUBSTRACT MINUS ONE AT THE
 # VERIFY ONE CONDTION WHEN MOVE X OR Y OR LEFT OR RIGHT
   jal setting_position
+  lw $a0, first_velocity
+  loop_wait_player_try:
+  add  $a0, $a0, -1
+  slt $t8,  $a0, $zero
+  andi $t9, $t8, 1
+  beq $t8, $zero,loop_wait_player_try
+  
   jal clear_move_new_position # SETTING NEW POSITION
   # T3 WHERE  LEFT RIGHT
   # T4 MOVE UP AND DOWN
   # STORE THE NEW POS j loop_wait_100
   # TIME MOVEMENT ADD SPEED
-   li $a0 5000
-   j loop_wait_player
-     loop_wait_player:
-     add  $a0, $a0, -1
-     slt $t8,  $a0, $zero
-     andi $t9, $t7, 1
-     beq $t8, $zero,loop_wait_player
-  lw $t8, 0($s2)  # READ STATUS INPUT REGISTER
-  andi $t9, $t8, 1 # VERIFY STATUS REGISTER
-  beq $t9, $zero, keep_moving # KEEP LOOPING IF IS NOT READY
-  lw $a2, 4($s2) #k READ THE CHARACTER
-  jal move_player # MOVE PLAYER  
-
-
-
-
+  lw $a0 second_velocity
+  j loop_wait_player
+  loop_wait_player:
+    add  $a0, $a0, -1
+    slt $t8,  $a0, $zero
+    andi $t9, $t8, 1
+    beq $t8, $zero,loop_wait_player
+    lw $t8, 0($s2)  # READ STATUS INPUT REGISTER
+    andi $t9, $t8, 1 # VERIFY STATUS REGISTER
+    beq $t9, $zero, keep_moving # KEEP LOOPING IF IS NOT READY
+    lw $a2, 4($s2) #k READ THE CHARACTER
+    jal move_player # MOVE PLAYER  
 
 polling_input:
   lw $t8, 0($s2)  # READ STATUS INPUT REGISTER
@@ -237,8 +248,6 @@ move_player:
   jal clear_move_new_position # SETTING NEW POSITION
   jal keep_moving
 
-  
- 
   # VERIFICATION S
   else_S:
   la $t0, down # VERIFICATION S
@@ -252,7 +261,6 @@ move_player:
   jal clear_move_new_position # SETTING NEW POSITION
   jal keep_moving
   
- 
   # VERIFICATION D
   else_D:
   la $t0, right
@@ -266,7 +274,7 @@ move_player:
   jal clear_move_new_position # SETTING NEW POSITION
   jal keep_moving
   
-   # VERIFICATION W
+  # VERIFICATION W
   else_W:
   lb $t0, up
   seq $t8, $t0, $a2
@@ -274,11 +282,9 @@ move_player:
   beq  $t9, $zero, error
   li $t3, 0
   li $t4, 0
-  add $t4, $t4, -1 # SUBSTRACT MINUS ONE AT THE
+  sub $t4, $t4, 1 # SUBSTRACT MINUS ONE AT THE
   jal clear_move_new_position # SETTING NEW POSITION
   jal keep_moving
-  
-  
   
   # THIN AT THE ERROR
   error:
@@ -316,6 +322,8 @@ clear_move_new_position:
   
   jal verify_collision #  PIPPO VERIFY THAT YOU TAKE THE REWARD
     
+  li $a2, 0 # RESET SECURE A3 
+  li $a3, 0 # RESET SECURE A3 
   lw $a2, 0($s7) # MOVE X       
   lw $a3, 4($s7) # MOVE Y 
   jal setting_position #  JUMP HERE
